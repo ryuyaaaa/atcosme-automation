@@ -60,7 +60,7 @@ let col = 0;
         setInterval(function () {
             process.stdout.write(`取得中... ${review_count}/${sum_review_count}\r`);
             if (review_count === sum_review_count) process.exit();
-        }, 100);
+        }, 500);
 
         // クチコミの数
         let review_count_selector = 'ul.rev-cnt li a span.count.cnt';
