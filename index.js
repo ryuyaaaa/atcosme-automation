@@ -35,15 +35,38 @@ let col = 0;
                 '--no-first-run',
                 '--no-sandbox',
                 '--no-zygote',
-                '--single-process',
+                '--single-process'
             ]
         });
 
         const page = await browser.newPage();
+        await page.setRequestInterception(true);
+
+        page.on('request', request => {
+            if (request.url().includes('cosme.net/')) {
+                request.continue().catch(err => console.error(err));
+            } else {
+                request.abort().catch(err => console.error(err));
+            }
+        })
         page.on('console', msg => {
             for (let i = 0; i < msg._args.length; ++i) console.log(`${i}: ${msg._args[i]}`);
         });
         await page.goto(TARGET_URL);
+
+        let sum_review_count = -1;
+        let review_count = 0;
+
+        setInterval(function () {
+            process.stdout.write(`取得中... ${review_count}/${sum_review_count}\r`);
+            if (review_count === sum_review_count) process.exit();
+        }, 100);
+
+        // クチコミの数
+        let review_count_selector = 'ul.rev-cnt li a span.count.cnt';
+        await page.waitForSelector(review_count_selector);
+        sum_review_count = parseInt(await page.$$eval(review_count_selector, selector => selector[0].innerText), 10);
+        console.log(sum_review_count + '件のクチコミの取得を開始します。');
 
         // クチコミX件をクリック
         let review_button_selector = 'ul.rev-cnt li a';
@@ -60,7 +83,6 @@ let col = 0;
         let review_indivi_selector = 'div.inner div.body p.read';
         await page.waitForSelector(review_indivi_selector);
 
-        let review_count = 0;
         let pre_reviewer_name = null;
         while (true) {
             let retry_count = 0;
@@ -89,14 +111,14 @@ let col = 0;
 
             review_count++;
             sheet.data[col][1] = review_content;
-            console.log('.');
+            // console.log('.');
 
             try {
-                let next_button_selector = 'ul li.next a'
+                let next_button_selector = 'ul li.next a';
                 await page.waitForSelector(next_button_selector, { timeout: 5000 });
                 let next_buttons = await page.$$(next_button_selector);
                 next_buttons[0].click();
-                await page.waitForNavigation()
+                await page.waitForNavigation();
             } catch (err) {
                 break;
             }
