@@ -57,10 +57,10 @@ let col = 0;
         let sum_review_count = -1;
         let review_count = 0;
 
-        setInterval(function () {
-            process.stdout.write(`取得中... ${review_count}/${sum_review_count}\r`);
-            if (review_count === sum_review_count) process.exit();
-        }, 500);
+        // setInterval(function () {
+        //     process.stdout.write(`取得中... ${review_count}/${sum_review_count}\r`);
+        //     if (review_count === sum_review_count) process.exit();
+        // }, 500);
 
         // クチコミの数
         let review_count_selector = 'ul.rev-cnt li a span.count.cnt';
@@ -83,35 +83,19 @@ let col = 0;
         let review_indivi_selector = 'div.inner div.body p.read';
         await page.waitForSelector(review_indivi_selector);
 
-        let pre_reviewer_name = null;
         while (true) {
-            let retry_count = 0;
             let reviewer_name_selector = 'span.reviewer-name';
             await page.waitForSelector(reviewer_name_selector);
-            while (true) {
-                let current_reviewer_name = await page.$$eval(reviewer_name_selector, selector => selector[0].innerText);
-                if (!!current_reviewer_name && current_reviewer_name != pre_reviewer_name) {
-                    col++;
-                    pre_reviewer_name = current_reviewer_name;
-                    sheet.data[col] = [];
-                    sheet.data[col][0] = current_reviewer_name;
-                    break;
-                } else {
-                    await page.waitFor(300);
-                    retry_count++;
-                    if (retry_count >= 10) {
-                        console.log('エラー発生');
-                        await browser.close();
-                        return;
-                    }
-                }
-            }
+            let reviewer_name = await page.$$eval(reviewer_name_selector, selector => selector[0].innerText);
+            col++;
+            sheet.data[col] = [];
+            sheet.data[col][0] = reviewer_name;
 
             let review_content = await page.$$eval(review_indivi_selector, selector => selector[0].innerText);
 
             review_count++;
             sheet.data[col][1] = review_content;
-            // console.log('.');
+            console.log(review_count);
 
             try {
                 let next_button_selector = 'ul li.next a';
